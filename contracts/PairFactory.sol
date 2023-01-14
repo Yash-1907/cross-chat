@@ -1,9 +1,31 @@
 //SPDX-License-Identifier:MIT
 pragma solidity ^0.8.13;
 
-import "./interfaces/IPair.sol";
-import "./Pair.sol";
+// import "./interfaces/IPair.sol";
+// import "./Pair.sol";
 import "hardhat/console.sol";
+
+
+
+interface IPair {
+    function initialize(address, address) external;
+}
+
+contract Pair is IPair {
+    address public factory;
+    address public user0;
+    address public user1;
+
+    function initialize(address _user0, address _user1) external {
+        // require(msg.sender == factory, "Invalid");
+        console.log("In Init");
+        user0 = _user0;
+        user1 = _user1;
+    }
+
+    receive() external payable {}
+}
+
 
 contract PairFactory {
     mapping(address => mapping(address => address)) getPair;
@@ -35,11 +57,14 @@ contract PairFactory {
             pair := create2(0xFF, add(bytecode, 32), mload(bytecode), salt)
         }
         console.log("Here3");
-        IPair(pair).initialize(user0, user1);
+        Pair spawn = new Pair();
+        // spawn = new Pair(pair);
+        IPair(spawn).initialize(user0, user1);
         console.log("Here4");
-        // getPair[user0][user1] = pair;
-        // getPair[user1][user0] = pair;
-        // allPairs.push(pair);
+        getPair[user0][user1] = address(spawn);
+        getPair[user1][user0] = address(spawn);
+        allPairs.push(address(spawn));
+        console.log(address(spawn));
 
         emit PairCreated(user0, user1, pair);
     }
